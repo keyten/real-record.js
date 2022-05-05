@@ -16,6 +16,31 @@ const object = new RealRecord({
 }, String, String); // Error!
 ```
 
+#### Number as a key
+If you use key: String, you can use numbers anyway (they get converted by js automatically):
+```js
+const realrecord = new RealRecord({ foo: 'bar' }, String, String);
+realrecord[0] = 'baz'; // works as realrecord['0']
+```
+
+If you use key: Number, RealRecord will check type and throw error if it's not integer:
+```js
+const realrecord = new RealRecord([0, 1, 2], Number, Number);
+realrecord['0'] = 1; // works as realrecord[0]
+realrecord['customstr'] = 1; // Error!
+```
+
+#### Custom type guard
+```js
+const realrecord = new RealRecord({
+  foo: 'bar'
+}, String, {
+  guard: x => x === null || typeof x === 'string'
+});
+
+realrecord.foo = null;
+```
+
 #### It works like proxy
 You actually can add new props without type checks in a roundabout way:
 ```js
