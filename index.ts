@@ -6,7 +6,8 @@ export function RealRecord<K extends symbol, T>(values: Record<K, T>, keytype: t
 export function RealRecord<K extends string | number | symbol, T>(
     values: Record<K, T>,
     keytype: typeof String | typeof Number | typeof Symbol,
-    valtype: ClassType | { guard: (val: any) => val is T }
+    valtype: ClassType | { guard: (val: any) => val is T },
+    strict = true
 ): Record<K, T> {
     const checkKey = (val: string | symbol): val is Exclude<K, number> => {
         switch(keytype) {
@@ -31,10 +32,27 @@ export function RealRecord<K extends string | number | symbol, T>(
       return Object.getPrototypeOf(val).constructor === valtype;
     }
 
+    Object.entries(values).forEach(([key, value]) => {
+      if (!checkKey(key)) {
+        throw new Error(`Can't create RealRecord - target object contains key with a different type.`)
+      }
+      if (!checkVal(value)) {
+        throw new Error(`Can't create RealRecord - target object contains value with a different type.`)
+      }
+    })
+
     return new Proxy(values, {
         get: function(target, name) {
             if (!checkKey(name)) {
               throw new Error(`You must use type ${keytype.name} for keys.`);
+            }
+            if (strict) {
+              if (!Object.prototype.hasOwnProperty.call(target, name)) {
+                return undefined;
+              }
+              if (!checkVal(target[name])) {
+                throw new Error('Object tried to return target of a different type.');
+              }
             }
             return target[name];
         },
